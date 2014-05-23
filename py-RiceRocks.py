@@ -175,8 +175,15 @@ class Sprite:
             sound.play()
    
     def draw(self, canvas):
-        canvas.draw_image(self.image, self.image_center, self.image_size,
-                          self.pos, self.image_size, self.angle)
+        
+        if self.animated:
+            frame_index = self.age % self.lifespan
+            image_center = [self.image_center[0] + (self.image_size[0]*frame_index), self.image_center[1]]
+            canvas.draw_image(self.image, image_center, self.image_size, 
+                              self.pos, self.image_size, self.angle)            
+        else:
+            canvas.draw_image(self.image, self.image_center, self.image_size, 
+                              self.pos, self.image_size, self.angle)
 
     def get_radius(self):
         return self.radius
@@ -261,6 +268,9 @@ def draw(canvas):
     
     # update missiles
     process_sprite_group(canvas, missile_group)
+    
+    # update explosions
+    process_sprite_group(canvas, explosion_group)
 
     # update collision between the rocks and the ship
     if group_collide(rock_group, my_ship):
@@ -312,6 +322,7 @@ def group_collide(group, other_object):
     for sprite in group:
         if sprite.collide(other_object):
             collides.add(sprite)
+            create_explosion(sprite.get_position())
             
     group.difference_update(collides)
     return len(collides) > 0
@@ -333,6 +344,12 @@ def game_over():
     started = False
     missile_group = set()
     rock_group = set()
+
+# called when an explosion occurs    
+def create_explosion(position):
+    explosion_group.add(Sprite(position, [0, 0], 0, 0, explosion_image, explosion_info))
+    explosion_sound.rewind()
+    explosion_sound.play()
     
 # initialize stuff
 frame = simplegui.create_frame("Asteroids", WIDTH, HEIGHT)
@@ -341,6 +358,7 @@ frame = simplegui.create_frame("Asteroids", WIDTH, HEIGHT)
 my_ship = Ship([WIDTH / 2, HEIGHT / 2], [0, 0], 0, ship_image, ship_info)
 rock_group = set()
 missile_group = set()
+explosion_group = set()
 
 # register handlers
 frame.set_keyup_handler(keyup)
